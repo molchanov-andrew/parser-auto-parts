@@ -1,7 +1,6 @@
 <?php
 
 
-use PhpOffice\PhpSpreadsheet\Reader\Xlsx;
 use PhpOffice\PhpSpreadsheet\Writer\Csv;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -19,9 +18,9 @@ date_default_timezone_set('UTC');
 class Parser {
 
     public $referer = 'k-h.com.ua/';
-    public $cookiefile = '/home/andrew/www/parserAutoParts/cookie.txt';
-    public $fileSourcePath = '/home/andrew/www/parserAutoParts/pricelist_zenitauto_2589.xlsx';
-    public $fileResultPath = '/home/andrew/www/parserAutoParts/_result.csv';
+    public $cookiefile = __DIR__ .'/cookie.txt';
+    public $fileSourcePath = __DIR__ .'/pricelist_zenitauto_2589.xlsx';
+    public $fileResultPath = __DIR__ .'/_result.csv';
     public $parsingDate;
 
 // формирование прайса
@@ -39,7 +38,7 @@ class Parser {
 
         //Отлавливаем ошибки подключения
         if ($result === false) {
-            echo "Ошибка CURL: " . curl_error($curl);
+            echo "Ошибка CURL: " . curl_error($result);
         } else {
             curl_close($fileCreate);
             return true;
@@ -82,11 +81,11 @@ class Parser {
 
         foreach ($loadedSheetNames as $sheetIndex => $loadedSheetName) {
             $writer->setSheetIndex($sheetIndex);
-            $writer->save('/home/andrew/www/parserAutoParts/' . $loadedSheetName . '.csv');
+            $writer->save(__DIR__ . '/'. $loadedSheetName . '.csv');
         }
 
         $handle = fopen($loadedSheetName . '.csv', "r");
-        $brandSelected = fopen('/home/andrew/www/parserAutoParts/brand-selected.csv', "w");
+        $brandSelected = fopen(__DIR__ .'/brand-selected.csv', "w");
         while (($data = fgetcsv($handle, ",")) !== FALSE) {
 
             if (isset($data[3]) && $data[3] == 'MOBIS' || $data[3] == 'HYUNDAI' || $data[3] == 'Renault' || $data[3] == 'Renault Turkey') {
@@ -102,12 +101,12 @@ class Parser {
     public function ParsingStockBalance() {
         $parsingDate = date('l jS \of F Y h:i:s A');
 // работаем с подготовленным  файлом 
-        $filePreparingOpen = fopen('/home/andrew/www/parserAutoParts/brand-selected.csv', "r");
+        $filePreparingOpen = fopen(__DIR__ . '/brand-selected.csv', "r");
         $fileResultOpen = fopen($this->fileResultPath, "w");
 
         fputcsv($fileResultOpen, array($parsingDate), ',');
         fputcsv($fileResultOpen, array('Parts Number', 'Stock Ballance', 'Brand', 'StockCity'), ',');
-        if (is_readable('/home/andrew/www/parserAutoParts/brand-selected.csv')) {
+        if (is_readable(__DIR__ . '/brand-selected.csv')) {
 
             while (($data = fgetcsv($filePreparingOpen, ',')) !== FALSE) {
                 $partNumber = $data[1];
@@ -197,7 +196,7 @@ class Parser {
             $mail->addAddress('avto-sklad.price@ukr.net', 'AvtoSklad');     // Add a recipient
             $mail->addCC('andymolchanov@ukr.net', 'Admin');     // Add a recipient
             // Attachments
-            $mail->addAttachment('/home/andrew/www/parserAutoParts/_result.csv');         // Add attachments
+            $mail->addAttachment(__DIR__ . '/_result.csv');         // Add attachments
             // Content
             $mail->isHTML(true);                                  // Set email format to HTML
             $mail->Subject = 'Parsing' . $parsingDate;
@@ -212,6 +211,7 @@ class Parser {
 }
 
 $parser = new Parser;
+
 $resultCreateFileToDownload = $parser->CreateFileToDownload();
 $resultGetFile = $parser->GetFile();
 $resultPreparing = $parser->PreparingFileForParsing();
